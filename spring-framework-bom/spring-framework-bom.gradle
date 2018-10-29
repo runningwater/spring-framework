@@ -1,11 +1,5 @@
 description = "Spring Framework (Bill of Materials)"
 
-dependencyManagement {
-	generatedPomCustomization {
-		enabled = false
-	}
-}
-
 configurations.archives.artifacts.clear()
 artifacts {
 	// work around GRADLE-2406 by attaching text artifact
@@ -20,7 +14,7 @@ install {
 				asNode().children().last() + {
 					delegate.dependencyManagement {
 						delegate.dependencies {
-							parent.subprojects.sort { "$it.name" }.each { p ->
+							parent.moduleProjects.sort { "$it.name" }.each { p ->
 								if (p != project) {
 									delegate.dependency {
 										delegate.groupId(p.group)

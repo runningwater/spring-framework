@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,15 @@ public class Jackson2JsonEncoderTests extends AbstractDataBufferAllocatingTestCa
 	public void canEncode() {
 		ResolvableType pojoType = ResolvableType.forClass(Pojo.class);
 		assertTrue(this.encoder.canEncode(pojoType, APPLICATION_JSON));
+		assertTrue(this.encoder.canEncode(pojoType, APPLICATION_JSON_UTF8));
+		assertTrue(this.encoder.canEncode(pojoType, APPLICATION_STREAM_JSON));
 		assertTrue(this.encoder.canEncode(pojoType, null));
 
 		// SPR-15464
 		assertTrue(this.encoder.canEncode(ResolvableType.NONE, null));
+
+		// SPR-15910
+		assertFalse(this.encoder.canEncode(ResolvableType.forClass(Object.class), APPLICATION_OCTET_STREAM));
 	}
 
 	@Test // SPR-15866
@@ -99,7 +104,10 @@ public class Jackson2JsonEncoderTests extends AbstractDataBufferAllocatingTestCa
 		Flux<DataBuffer> output = this.encoder.encode(source, this.bufferFactory, type, null, emptyMap());
 
 		StepVerifier.create(output)
-				.consumeNextWith(stringConsumer("[{\"foo\":\"foo\",\"bar\":\"bar\"},{\"foo\":\"foofoo\",\"bar\":\"barbar\"},{\"foo\":\"foofoofoo\",\"bar\":\"barbarbar\"}]"))
+				.consumeNextWith(stringConsumer("[" +
+						"{\"foo\":\"foo\",\"bar\":\"bar\"}," +
+						"{\"foo\":\"foofoo\",\"bar\":\"barbar\"}," +
+						"{\"foo\":\"foofoofoo\",\"bar\":\"barbarbar\"}]"))
 				.verifyComplete();
 	}
 

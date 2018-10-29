@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,12 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.core.GenericTypeResolver;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ClassUtils;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Descriptor for a specific dependency that is about to be injected.
@@ -50,22 +51,6 @@ import org.springframework.util.ClassUtils;
  */
 @SuppressWarnings("serial")
 public class DependencyDescriptor extends InjectionPoint implements Serializable {
-
-	@Nullable
-	private static final Class<?> kotlinMetadata;
-
-	static {
-		Class<?> metadata;
-		try {
-			metadata = ClassUtils.forName("kotlin.Metadata", DependencyDescriptor.class.getClassLoader());
-		}
-		catch (ClassNotFoundException ex) {
-			// Kotlin API not available - no Kotlin support
-			metadata = null;
-		}
-		kotlinMetadata = metadata;
-	}
-
 
 	private final Class<?> declaringClass;
 
@@ -90,7 +75,7 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 	private Class<?> containingClass;
 
 	@Nullable
-	private volatile ResolvableType resolvableType;
+	private transient volatile ResolvableType resolvableType;
 
 
 	/**
@@ -183,20 +168,13 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 
 		if (this.field != null) {
 			return !(this.field.getType() == Optional.class || hasNullableAnnotation() ||
-					(useKotlinSupport(this.field.getDeclaringClass()) && KotlinDelegate.isNullable(this.field)));
+					(KotlinDetector.isKotlinReflectPresent() &&
+							KotlinDetector.isKotlinType(this.field.getDeclaringClass()) &&
+							KotlinDelegate.isNullable(this.field)));
 		}
 		else {
 			return !obtainMethodParameter().isOptional();
 		}
-	}
-
-	/**
-	 * Return true if Kotlin is present and if the specified class is a Kotlin one.
-	 */
-	@SuppressWarnings("unchecked")
-	private static boolean useKotlinSupport(Class<?> clazz) {
-		return (kotlinMetadata != null &&
-				clazz.getDeclaredAnnotation((Class<? extends Annotation>) kotlinMetadata) != null);
 	}
 
 	/**
@@ -232,8 +210,28 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 	 * (qualifiers etc already applied)
 	 * @return a bean instance to proceed with, or {@code null} for none
 	 * @throws BeansException in case of the not-unique scenario being fatal
-	 * @since 4.3
+	 * @since 5.1
 	 */
+	@Nullable
+	public Object resolveNotUnique(ResolvableType type, Map<String, Object> matchingBeans) throws BeansException {
+		throw new NoUniqueBeanDefinitionException(type, matchingBeans.keySet());
+	}
+
+	/**
+	 * Resolve the specified not-unique scenario: by default,
+	 * throwing a {@link NoUniqueBeanDefinitionException}.
+	 * <p>Subclasses may override this to select one of the instances or
+	 * to opt out with no result at all through returning {@code null}.
+	 * @param type the requested bean type
+	 * @param matchingBeans a map of bean names and corresponding bean
+	 * instances which have been pre-selected for the given type
+	 * (qualifiers etc already applied)
+	 * @return a bean instance to proceed with, or {@code null} for none
+	 * @throws BeansException in case of the not-unique scenario being fatal
+	 * @since 4.3
+	 * @deprecated as of 5.1, in favor of {@link #resolveNotUnique(ResolvableType, Map)}
+	 */
+	@Deprecated
 	@Nullable
 	public Object resolveNotUnique(Class<?> type, Map<String, Object> matchingBeans) throws BeansException {
 		throw new NoUniqueBeanDefinitionException(type, matchingBeans.keySet());
@@ -320,7 +318,7 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 	/**
 	 * Return whether a fallback match is allowed.
 	 * <p>This is {@code false} by default but may be overridden to return {@code true} in order
-	 * to suggest to a {@link org.springframework.beans.factory.support.AutowireCandidateResolver}
+	 * to suggest to an {@link org.springframework.beans.factory.support.AutowireCandidateResolver}
 	 * that a fallback match is acceptable as well.
 	 * @since 4.0
 	 */
@@ -376,7 +374,6 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 						Type[] args = ((ParameterizedType) type).getActualTypeArguments();
 						type = args[args.length - 1];
 					}
-					// TODO: Object.class if unresolvable
 				}
 				if (type instanceof Class) {
 					return (Class<?>) type;
@@ -410,6 +407,11 @@ public class DependencyDescriptor extends InjectionPoint implements Serializable
 		DependencyDescriptor otherDesc = (DependencyDescriptor) other;
 		return (this.required == otherDesc.required && this.eager == otherDesc.eager &&
 				this.nestingLevel == otherDesc.nestingLevel && this.containingClass == otherDesc.containingClass);
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * super.hashCode() + ObjectUtils.nullSafeHashCode(this.containingClass);
 	}
 
 
