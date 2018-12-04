@@ -391,7 +391,7 @@ be configured with a simple string for that resource, as the following example s
 ----
 ====
 
-Note that the resource path has no prefix. Consequetly, because the application context itself is
+Note that the resource path has no prefix. Consequently, because the application context itself is
 going to be used as the `ResourceLoader`, the resource itself is loaded through a
 `ClassPathResource`, a `FileSystemResource`, or a `ServletContextResource`,
 depending on the exact type of the context.
@@ -462,7 +462,7 @@ the current working directory).
 
 Note that the use of the special classpath prefix or a standard URL prefix on the
 location path overrides the default type of `Resource` created to load the
-definition. Consider the folowing example:
+definition. Consider the following example:
 
 [source,java,indent=0]
 [subs="verbatim,quotes"]
@@ -711,7 +711,7 @@ In practice, this means the following examples are equivalent:
 ----
 ====
 
-The following exmaples are also equivalent (even though it would make sense for them to be different, as one
+The following examples are also equivalent (even though it would make sense for them to be different, as one
 case is relative and the other absolute):
 
 ====

@@ -1133,6 +1133,42 @@ application.
 
 
 
+[[websocket-stomp-server-config]]
+=== WebSocket Server
+
+To configure the underlying WebSocket server, the information in
+<<websocket-server-runtime-configuration>> applies. For Jetty, however you need to set
+the `HandshakeHandler` and `WebSocketPolicy` through the `StompEndpointRegistry`:
+
+====
+[source,java,indent=0]
+[subs="verbatim,quotes"]
+----
+	@Configuration
+	@EnableWebSocketMessageBroker
+	public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+		@Override
+		public void registerStompEndpoints(StompEndpointRegistry registry) {
+			registry.addEndpoint("/portfolio").setHandshakeHandler(handshakeHandler());
+		}
+
+		@Bean
+		public DefaultHandshakeHandler handshakeHandler() {
+
+			WebSocketPolicy policy = new WebSocketPolicy(WebSocketBehavior.SERVER);
+			policy.setInputBufferSize(8192);
+			policy.setIdleTimeout(600000);
+
+			return new DefaultHandshakeHandler(
+					new JettyRequestUpgradeStrategy(new WebSocketServerFactory(policy)));
+		}
+	}
+----
+====
+
+
+
 [[websocket-stomp-message-flow]]
 === Flow of Messages
 
@@ -1641,10 +1677,10 @@ to receive notifications when the "`system`" connection to the broker is lost an
 re-established. For example, a Stock Quote service that broadcasts stock quotes can
 stop trying to send messages when there is no active "`system`" connection.
 
-By default, the STOMP broker relay always connects (and reconnects as needed if
-connectivity is lost) to the same host and port. If you wish to supply multiple addresses,
+By default, the STOMP broker relay always connects, and reconnects as needed if
+connectivity is lost, to the same host and port. If you wish to supply multiple addresses,
 on each attempt to connect, you can configure a supplier of addresses, instead of a
-fixed host and port. The following example shows how to do so:
+fixed host and port. The following example shows how to do that:
 
 ====
 [source,java,indent=0]
@@ -1663,14 +1699,9 @@ public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 	}
 
 	private ReactorNettyTcpClient<byte[]> createTcpClient() {
-
-		Consumer<ClientOptions.Builder<?>> builderConsumer = builder -> {
-			builder.connectAddress(()-> {
-				// Select address to connect to ...
-			});
-		};
-
-		return new ReactorNettyTcpClient<>(builderConsumer, new StompReactorNettyCodec());
+		return new ReactorNettyTcpClient<>(
+				client -> client.addressSupplier(() -> ... ),
+				new StompReactorNettyCodec());
 	}
 }
 ----

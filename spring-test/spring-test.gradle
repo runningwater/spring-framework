@@ -26,13 +26,13 @@ dependencies {
 	optional("javax.servlet:javax.servlet-api:4.0.1")
 	optional("javax.servlet.jsp:javax.servlet.jsp-api:2.3.2-b02")
 	optional("javax.servlet.jsp.jstl:javax.servlet.jsp.jstl-api:1.2.1")
-	optional("javax.xml.bind:jaxb-api:2.3.0")
+	optional("javax.xml.bind:jaxb-api:2.3.1")
 	optional("javax.websocket:javax.websocket-api:1.1")
 	optional("junit:junit:4.12")
 	optional("org.junit.jupiter:junit-jupiter-api")
 	optional("org.testng:testng:6.14.3")
 	optional("org.aspectj:aspectjweaver:${aspectjVersion}")
-	optional("org.codehaus.groovy:groovy-all:${groovyVersion}")
+	optional("org.codehaus.groovy:groovy:${groovyVersion}")
 	optional("org.hamcrest:hamcrest-core:1.3")
 	optional("org.apache.taglibs:taglibs-standard-jstlel:1.2.5") {
 		exclude group: "org.apache.taglibs", module: "taglibs-standard-spec"
@@ -40,10 +40,10 @@ dependencies {
 	optional("net.sourceforge.htmlunit:htmlunit:2.33") {
 		exclude group: "commons-logging", module: "commons-logging"
 	}
-	optional("org.seleniumhq.selenium:htmlunit-driver:2.33.0") {
+	optional("org.seleniumhq.selenium:htmlunit-driver:2.33.3") {
 		exclude group: "commons-logging", module: "commons-logging"
 	}
-	optional("org.seleniumhq.selenium:selenium-java:3.14.0") {
+	optional("org.seleniumhq.selenium:selenium-java:3.141.59") {
 		exclude group: "commons-logging", module: "commons-logging"
 		exclude group: "io.netty", module: "netty"
 	}
