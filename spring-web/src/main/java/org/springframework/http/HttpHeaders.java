@@ -1146,6 +1146,24 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	}
 
 	/**
+	 * Set the time the resource was last changed, as specified by the
+	 * {@code Last-Modified} header.
+	 * @since 5.1.4
+	 */
+	public void setLastModified(Instant lastModified) {
+		setInstant(LAST_MODIFIED, lastModified);
+	}
+
+	/**
+	 * Set the time the resource was last changed, as specified by the
+	 * {@code Last-Modified} header.
+	 * @since 5.1.4
+	 */
+	public void setLastModified(ZonedDateTime lastModified) {
+		setZonedDateTime(LAST_MODIFIED, lastModified.withZoneSameInstant(ZoneId.of("GMT")));
+	}
+
+	/**
 	 * Return the time the resource was last changed, as specified by the
 	 * {@code Last-Modified} header.
 	 * <p>The date is returned as the number of milliseconds since
@@ -1260,6 +1278,16 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	 * Set the given date under the given header name after formatting it as a string
 	 * using the RFC-1123 date-time formatter. The equivalent of
 	 * {@link #set(String, String)} but for date headers.
+	 * @since 5.1.4
+	 */
+	public void setInstant(String headerName, Instant date) {
+		setZonedDateTime(headerName, ZonedDateTime.ofInstant(date, GMT));
+	}
+
+	/**
+	 * Set the given date under the given header name after formatting it as a string
+	 * using the RFC-1123 date-time formatter. The equivalent of
+	 * {@link #set(String, String)} but for date headers.
 	 * @since 5.0
 	 */
 	public void setZonedDateTime(String headerName, ZonedDateTime date) {
@@ -1274,14 +1302,7 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 	 * @see #setZonedDateTime(String, ZonedDateTime)
 	 */
 	public void setDate(String headerName, long date) {
-		set(headerName, formatDate(date));
-	}
-
-	// Package private: also used in ResponseCookie..
-	static String formatDate(long date) {
-		Instant instant = Instant.ofEpochMilli(date);
-		ZonedDateTime time = ZonedDateTime.ofInstant(instant, GMT);
-		return DATE_FORMATTERS[0].format(time);
+		setInstant(headerName, Instant.ofEpochMilli(date));
 	}
 
 	/**
@@ -1629,6 +1650,13 @@ public class HttpHeaders implements MultiValueMap<String, String>, Serializable 
 		else {
 			return headers;
 		}
+	}
+
+	// Package-private: used in ResponseCookie
+	static String formatDate(long date) {
+		Instant instant = Instant.ofEpochMilli(date);
+		ZonedDateTime time = ZonedDateTime.ofInstant(instant, GMT);
+		return DATE_FORMATTERS[0].format(time);
 	}
 
 }
